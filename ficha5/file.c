@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
@@ -6,6 +7,31 @@
 #define MAX_STR 25
 #define MAX_STUDENTS 50
 #define BOOK_MAX_STR 30
+#define MAX_NAME 50
+
+#define bool int
+#define false 0
+#define true 1
+
+typedef struct Fraction
+{
+    int numerator;
+    int denominator;
+} fraction;
+typedef struct Student
+{
+    int number;
+    char name[MAX_STR];
+    int grade;
+} student;
+typedef struct Book
+{
+    int id;
+    char title[30];
+    char author[30];
+    char type[20];
+    int year;
+} book;
 
 void ex1()
 {
@@ -22,7 +48,7 @@ void ex1()
     scanf("%d", &v2.x);
     printf("\ty:");
     scanf("%d", &v2.y);
-    int l1 = sqrt(pow(v1.x - v2.x, 2)), l2 = sqrt(pow(v1.y - v2.y, 2));
+    int l1 = fabs(v1.x - v2.x), l2 = fabs(v1.y - v2.y);
 
     /*int vertex[2][2], l1, l2;
     printf("\nvertex 1:\n\tx:");
@@ -40,24 +66,6 @@ void ex1()
     printf("Length:%d / Width:%d;", l1 > l2 ? l1 : l2, l1 < l2 ? l1 : l2);
     printf("\nArea: %d; \nDiagonal: %.2f; ", l1 * l2, sqrt(pow(l1, 2) + pow(l2, 2)));
 }
-typedef struct Fraction
-{
-    int numerator;
-    int denominator;
-} fraction;
-typedef struct Student
-{
-    int number;
-    char name[MAX_STR];
-    int grade;
-} student;
-typedef struct Book
-{
-    char title[30];
-    char author[30];
-    char type[20];
-    int year;
-} book;
 
 void additionAndSubtraction(fraction f1, fraction f2, int add_sub)
 {
@@ -219,63 +227,73 @@ void ex3b()
 
 void newBook(book *books, int *count)
 {
-    (*count)++;
+    books += *count;
     printf("BOOK Nº%d:\n\tTITLE:", *count);
-    getchar();
+    fseek(stdin, 0, 2);
     fgets(books->title, BOOK_MAX_STR, stdin);
+    fseek(stdin, 0, 2);
 
-    printf("\tAUTHOR:");
-    getchar();
+    printf("\tAUTHOR: ");
+    fseek(stdin, 0, 2);
     fgets(books->author, BOOK_MAX_STR, stdin);
+    fseek(stdin, 0, 2);
 
-    printf("\tTYPE:");
-    getchar();
+    printf("\tTYPE: ");
+    fseek(stdin, 0, 2);
     fgets(books->type, BOOK_MAX_STR - 10, stdin);
+    fseek(stdin, 0, 2);
 
-    printf("\tYEAR:");
-    scanf("%d", books->year);
+    printf("\tYEAR: ");
+    scanf("%d", &books->year);
+    books->id = *count;
+    (*count)++;
 }
-void listBooks(book *books, int count)
+void listBooks(book *books, int *count)
 {
-    for (int i = 1; i < count; i++)
-        printf("BOOK Nº%d:\n\tTITLE: %s;\n\tAUTHOR: %s;\n\tTYPE: %s;\n\tYEAR: %d;\n", i, books->title, books->author, books->type, books->year);
+    for (int i = 0; i < *count; i++)
+    {
+        printf("BOOK %s:\n\tWriten by  %s. \n\tTYPE: %s;\n\tWriten in %d.\n", books->title, books->author, books->type, books->year);
+        books++;
+    }
+}
+int bookExist(book *books, char book[], int count)
+{
+    int id;
+    for (int i = 0; i < count; i++)
+    {
+        printf("book:%s\nbook->title:%s", book, books->title);
+        if (!strcmp(book, books->title))
+        {
+            printf("bookexists");
+            id = books->id;
+        }
+        books++;
+    }
+    return id;
 }
 void removeBook(book *books, int *count)
 {
-    int n;
-    do
+    char bookTitle[BOOK_MAX_STR];
+    printf("What book do you want to remove from the list?");
+    fseek(stdin, 0, 2);
+    fgets(bookTitle, BOOK_MAX_STR, stdin);
+    int id = bookExist(books, bookTitle, *count);
+    printf("\nid:%d", id);
+    if (id == 0)
     {
-        printf("What book do you want to remove from the list?");
-        scanf("%d", &n);
-    } while (n > *count || n <= 0);
-    for (int i = 1; i < *count; i++)
-        books[n + (i - 1)] = books[n + i];
-    *count--;
-}
-/*void askOperation(book *books, int count)
-{
-    char opt;
-    printf("\nWhat do you want to do?\n(a)register new book\t(b)show books\t(c)remove book\n");
-    scanf(" %c", &opt);
-    switch (opt)
-    {
-    case 'a':
-        newBook(books, &count);
-        break;
-    case 'b':
-        listBooks(books, count);
-        break;
-    case 'c':
-        removeBook(books, &count);
-        break;
-    default:
-        break;
+        printf("Book not found in the list.\n");
+        return;
     }
-}*/
 
+    for (int i = id; i < *count; i++)
+        books[i] = books[i + 1];
+
+    (*count)--;
+}
 void ex4()
 {
-    book *books;
+
+    book books[50];
     int count = 0;
     char opt;
 
@@ -292,7 +310,7 @@ void ex4()
             newBook(books, &count);
             break;
         case 'b':
-            listBooks(books, count);
+            listBooks(books, &count);
             break;
         case 'c':
             removeBook(books, &count);
@@ -303,9 +321,124 @@ void ex4()
     } while (opt == 'a' || opt == 'b' || opt == 'c');
 }
 
+/*typedef struct Theater
+{
+    int row;
+    seat seat;
+} room;*/
+typedef struct Seat
+{
+    char name[50];
+    bool paid;
+} seat;
+void createReservation(int rowN, int seatN, seat *seats[rowN][seatN])
+{
+    printf("NEW RESERVATION:\n");
+    int row, seat;
+    do
+    {
+        printf("\t-row n:");
+        scanf("%d", row);
+    } while (row > rowN || row <= 0);
+
+    do
+    {
+        printf("\t-seat n:");
+        scanf("%d", seat);
+    } while (seat > seatN || seat <= 0);
+
+    printf("Person name:");
+    fseek(stdin, 0, 2);
+    fgets(seats[row][seat]->name, MAX_NAME, stdin);
+    fseek(stdin, 0, 2);
+
+    do
+    {
+        printf("Pay now or later?\n(1)now\t(0)later\n");
+        scanf("%d", seats[row][seat]->paid);
+    } while (!(seats[row][seat]->paid));
+}
+void removeReservation(int rowN, int seatN, seat *seats[rowN][seatN])
+{
+    printf("CANCEL RESERVATION:\n");
+    int row, seat;
+    do
+    {
+        printf("\t-row n:");
+        scanf("%d", row);
+    } while (row > rowN || row <= 0);
+
+    do
+    {
+        printf("\t-seat n:");
+        scanf("%d", seat);
+    } while (seat > seatN || seat <= 0);
+    char name = *seats[row][seat]->name, name2;
+    if (name != NULL)
+    {
+        printf("To cancel the reservation enter your name:");
+        fseek(stdin, 0, 2);
+        fgets(name, MAX_NAME, stdin);
+        fseek(stdin, 0, 2);
+        if (name2 == name)
+        {
+            strcpy(seats[row][seat]->name, "");
+            seats[row][seat]->paid = false;
+            if (strcmp(seats[row][seat]->name, "") && !(seats[row][seat]->paid))
+                printf("Reservation Cancelled!");
+        }
+        else
+        {
+            printf("Wrong name!");
+        }
+    }
+    else
+    {
+        printf("The seat isn't yet reserv'd.\nOperation Cancelled!!");
+    }
+}
+void showOccupationMap() {}
+void listReservations() {}
+
+void ex5()
+{
+    int rown, seatn;
+    printf("Welcome to the IPV Show!");
+    printf("How many rows a single room can have?");
+    scanf("%d", &rown);
+    printf("How many seats can fit heach row?");
+    scanf("%d", &seatn);
+    int seats[rown][seatn];
+    seat *room = seats;
+    char opt;
+    do
+    {
+        printf("\nWhat do you want to do?\n(a)create new reservation\t(b)cancel reservation\t(c)ocupation map\t(d)reservation list\n");
+        scanf(" %c", &opt);
+
+        switch (opt)
+        {
+        case 'a':
+            createReservation(rown, seatn, room);
+            break;
+        case 'b':
+            removeReservation(rown, seatn, room);
+            break;
+        case 'c':
+            showOccupationMap();
+            break;
+        case 'd':
+            listReservations();
+            break;
+        default:
+            break;
+        }
+    } while (opt == 'a' || opt == 'b' || opt == 'c');
+}
+
 int main()
 {
     setlocale(LC_ALL, "pt_PT.utf8");
-    ex4();
+    ex2();
     return 0;
 }
