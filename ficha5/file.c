@@ -9,9 +9,9 @@
 #define BOOK_MAX_STR 30
 #define MAX_NAME 50
 
-#define bool int
-#define false 0
+typedef int bool;
 #define true 1
+#define false 0
 
 typedef struct Fraction
 {
@@ -330,61 +330,102 @@ typedef struct Seat
 {
     char name[50];
     bool paid;
-} seat;
-void createReservation(int rowN, int seatN, seat *seats[rowN][seatN])
+} Seat;
+void askInputs(int *rown, int *seatn)
 {
-    printf("NEW RESERVATION:\n");
+    while (true)
+    {
+        printf("\nHow many rows a single room can have?");
+        if (scanf("%d", rown) == 1)
+            break;
+        printf("Invalid input!!");
+        while (getchar() != '\n')
+            ;
+    }
+    while (true)
+    {
+        printf("\nHow many seats can fit heach row?");
+        if (scanf("%d", seatn) == 1)
+            break;
+        printf("Invalid input!!");
+        while (getchar() != '\n')
+            ;
+    }
+}
+void createReservation(int rowN, int seatN, Seat *seats)
+{
+    printf("\nNEW RESERVATION:\n");
     int row, seat;
     do
     {
+        row = 0;
         printf("\t-row n:");
-        scanf("%d", row);
+        if (scanf("%d", &row) != 1 && (row > rowN || row <= 0))
+        {
+            printf("Invalid row number!\n");
+            while (getchar() != '\n')
+                ;
+        }
     } while (row > rowN || row <= 0);
 
     do
     {
+        seat = 0;
         printf("\t-seat n:");
-        scanf("%d", seat);
+        if (scanf("%d", &seat) != 1 && (seat > seatN || seat <= 0))
+        {
+            printf("Invalid seat number!\n");
+            while (getchar() != '\n')
+                ;
+        }
     } while (seat > seatN || seat <= 0);
+
+    seat--;
+    row--;
+
+    Seat *currentPos = seats += (row * seatN + seat);
 
     printf("Person name:");
     fseek(stdin, 0, 2);
-    fgets(seats[row][seat]->name, MAX_NAME, stdin);
+    fgets(currentPos->name, MAX_NAME, stdin);
     fseek(stdin, 0, 2);
+    currentPos->name[strcspn(currentPos->name, "\n")] = '\0';
 
-    do
-    {
-        printf("Pay now or later?\n(1)now\t(0)later\n");
-        scanf("%d", seats[row][seat]->paid);
-    } while (!(seats[row][seat]->paid));
+    printf("Pay now or later?\n\t(1)now\t(0)later\n");
+    scanf("%d", &currentPos->paid);
+
+    printf(strlen(currentPos->name) ? "Reservation created successfully!!" : "Reservation not created!!");
+    seats -= (row * rowN + seat);
 }
-void removeReservation(int rowN, int seatN, seat *seats[rowN][seatN])
+void removeReservation(int rowN, int seatN, Seat *seats)
 {
     printf("CANCEL RESERVATION:\n");
     int row, seat;
     do
     {
         printf("\t-row n:");
-        scanf("%d", row);
+        scanf("%d", &row);
     } while (row > rowN || row <= 0);
 
     do
     {
         printf("\t-seat n:");
-        scanf("%d", seat);
+        scanf("%d", &seat);
     } while (seat > seatN || seat <= 0);
-    char name = *seats[row][seat]->name, name2;
-    if (name != NULL)
+
+    char name2[MAX_NAME];
+    Seat *currentPos = seats += (row * rowN + seat);
+    if (*currentPos->name != '\0')
     {
         printf("To cancel the reservation enter your name:");
         fseek(stdin, 0, 2);
-        fgets(name, MAX_NAME, stdin);
+        fgets(name2, MAX_NAME, stdin);
         fseek(stdin, 0, 2);
-        if (name2 == name)
+        if (strcmp(name2, currentPos->name))
         {
-            strcpy(seats[row][seat]->name, "");
-            seats[row][seat]->paid = false;
-            if (strcmp(seats[row][seat]->name, "") && !(seats[row][seat]->paid))
+            strcpy(currentPos->name, "");
+            currentPos->paid = false;
+            if (strcmp(currentPos->name, "") && !(currentPos->paid))
                 printf("Reservation Cancelled!");
         }
         else
@@ -397,48 +438,87 @@ void removeReservation(int rowN, int seatN, seat *seats[rowN][seatN])
         printf("The seat isn't yet reserv'd.\nOperation Cancelled!!");
     }
 }
-void showOccupationMap() {}
-void listReservations() {}
+void showOccupationMap(int rowN, int seatN, Seat *seats)
+{
+    printf("Occupation Map:\n");
+    int count = 0;
+    for (int r = 1; r <= rowN; r++)
+    {
+        for (int s = 1; s <= seatN; s++)
+        {
+            char status = ' ';
+            status = (strlen(seats->name) && seats->paid)
+                         ? 'X'
+                         : (strlen(seats->name) && !(seats->paid)
+                                ? '-'
+                                : ' ');
+            printf("  [%c]  ", status);
+            *seats++;
+        }
+        printf("\n");
+    }
+    printf("\n[X]-reserved_&_paid\t[-]-reserved_&_unpaid\t[ ]-not_reserved");
+}
+void listReservations(int rowN, int seatN, Seat *seats)
+{
+    printf("Reservation List: ");
+    bool count = false;
+    for (int r = 1; r <= rowN; r++)
+    {
+        for (int s = 1; s <= seatN; s++)
+        {
+            if (strlen(seats->name))
+            {
+                printf("\n\nSeat(%d-%d):\n\tname:%s\n\tpaid:%d", seatN, rowN, seats->name, seats->paid);
+                count = true;
+            }
+            seats++;
+        }
+    }
+    if (!count)
+        printf("EMPTY LIST!!");
+}
 
 void ex5()
 {
     int rown, seatn;
-    printf("Welcome to the IPV Show!");
-    printf("How many rows a single room can have?");
-    scanf("%d", &rown);
-    printf("How many seats can fit heach row?");
-    scanf("%d", &seatn);
-    int seats[rown][seatn];
-    seat *room = seats;
+    printf("Welcome to the IPV Show!\n");
+    askInputs(&rown, &seatn);
+    Seat seats[rown][seatn];
+    for (int i = 0; i < rown * seatn; i++)
+    {
+        memset(seats[i / seatn][i % seatn].name, 0, MAX_NAME);
+        seats[i / seatn][i % seatn].paid = 0;
+    }
     char opt;
     do
     {
-        printf("\nWhat do you want to do?\n(a)create new reservation\t(b)cancel reservation\t(c)ocupation map\t(d)reservation list\n");
+        printf("\nWhat do you want to do?\n\t(a)create new reservation\n\t(b)cancel reservation\n\t(c)ocupation map\n\t(d)reservation list\n");
         scanf(" %c", &opt);
 
         switch (opt)
         {
         case 'a':
-            createReservation(rown, seatn, room);
+            createReservation(rown, seatn, (Seat *)seats);
             break;
         case 'b':
-            removeReservation(rown, seatn, room);
+            removeReservation(rown, seatn, (Seat *)seats);
             break;
         case 'c':
-            showOccupationMap();
+            showOccupationMap(rown, seatn, (Seat *)seats);
             break;
         case 'd':
-            listReservations();
+            listReservations(rown, seatn, (Seat *)seats);
             break;
         default:
             break;
         }
-    } while (opt == 'a' || opt == 'b' || opt == 'c');
+    } while (opt == 'a' || opt == 'b' || opt == 'c' || opt == 'd');
 }
 
 int main()
 {
     setlocale(LC_ALL, "pt_PT.utf8");
-    ex2();
+    ex5();
     return 0;
 }
