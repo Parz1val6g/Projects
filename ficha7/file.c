@@ -3,7 +3,6 @@
 void ex1()
 {
     FILE *f = fopen("C:\\tmp\\ola.txt", "r");
-    
 }
 int main()
 {
